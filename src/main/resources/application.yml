@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: agenda-fit
+
+  datasource:
+    url: jdbc:h2:mem:agendafit
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+
+server:
+  port: 8080
+
+# Configuração do JWT, já pronta para usar
+jwt:
+  # chave HS256: precisa ter pelo menos 32 caracteres
+  secret: agenda-fit-chave-secreta-do-projeto-diamante-2026
+  expiration-seconds: 3600
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
