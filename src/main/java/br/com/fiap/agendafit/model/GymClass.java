@@ -9,14 +9,19 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Index;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// Uma aula da grade da academia
 @Entity
+@Table(indexes = {
+        @Index(name = "idx_class_starts_at", columnList = "starts_at"),
+        @Index(name = "idx_class_modality", columnList = "modality")
+})
 @Getter
 @Setter
 @Builder
@@ -33,7 +38,6 @@ public class GymClass {
     @Enumerated(EnumType.STRING)
     private Modality modality;
 
-    // "level" é palavra reservada em alguns bancos
     @Enumerated(EnumType.STRING)
     @Column(name = "class_level")
     private Level level;
@@ -42,7 +46,6 @@ public class GymClass {
 
     private LocalDateTime startsAt;
 
-    // Integer (e não int) para o Query by Example ignorar quando não informado
     private Integer durationMinutes;
 
     private Integer capacity;

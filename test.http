@@ -1,45 +1,8 @@
-### Listar (no projeto base devolve todas as aulas, sem paginação)
-GET http://localhost:8080/classes
-
-### Uma aula
-GET http://localhost:8080/classes/1
-
-### Aula inexistente → 404
-GET http://localhost:8080/classes/999
-
-### Criar → 201
-POST http://localhost:8080/classes
+POST http://localhost:8080/auth/login
 Content-Type: application/json
+Accept: application/json
 
 {
-  "title": "Funcional ao ar livre",
-  "modality": "FUNCTIONAL",
-  "level": "INTERMEDIATE",
-  "instructor": "Rafael Souza",
-  "startsAt": "2026-12-01T10:00:00",
-  "durationMinutes": 45,
-  "capacity": 15
+  "email": "admin@fit.com",
+  "password": "admin123"
 }
-
-### Criar inválida → 400
-POST http://localhost:8080/classes
-Content-Type: application/json
-
-{"title": "", "modality": "YOGA"}
-
-### Atualizar → 200
-PUT http://localhost:8080/classes/1
-Content-Type: application/json
-
-{
-  "title": "Yoga reformulado",
-  "modality": "YOGA",
-  "level": "BEGINNER",
-  "instructor": "Carla Mendes",
-  "startsAt": "2026-12-02T07:00:00",
-  "durationMinutes": 60,
-  "capacity": 30
-}
-
-### Excluir → 204
-DELETE http://localhost:8080/classes/2

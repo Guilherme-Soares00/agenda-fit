@@ -7,6 +7,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Column;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
@@ -15,9 +19,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// Inscrição de um usuário em uma aula. Um usuário não se inscreve duas vezes na mesma aula.
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "gym_class_id"}))
+@Table(uniqueConstraints = @UniqueConstraint(name = "uk_enrollment_user_class", columnNames = {"user_id", "gym_class_id"}),
+        indexes = @Index(name = "idx_enrollment_class", columnList = "gym_class_id"))
 @Getter
 @Setter
 @Builder
@@ -29,11 +33,14 @@ public class Enrollment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "gym_class_id", nullable = false)
     private GymClass gymClass;
 
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 }

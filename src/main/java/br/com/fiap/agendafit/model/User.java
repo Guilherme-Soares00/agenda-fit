@@ -14,7 +14,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// "user" é palavra reservada no H2, por isso a tabela se chama users
 @Entity
 @Table(name = "users")
 @Getter
@@ -33,7 +32,6 @@ public class User {
     @Column(unique = true)
     private String email;
 
-    // sempre o hash BCrypt, nunca a senha em texto
     private String password;
 
     @Enumerated(EnumType.STRING)

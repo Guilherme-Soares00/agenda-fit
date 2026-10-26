@@ -1,6 +1,8 @@
 package br.com.fiap.agendafit.config;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.web.config.PageableHandlerMethodArgumentResolverCustomizer;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -9,7 +11,11 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        // necessário apenas quando o app roda no navegador (Expo Web)
         registry.addMapping("/**").allowedOrigins("*").allowedMethods("*").exposedHeaders("Location");
+    }
+
+    @Bean
+    public PageableHandlerMethodArgumentResolverCustomizer pageableCustomizer() {
+        return resolver -> resolver.setMaxPageSize(100);
     }
 }

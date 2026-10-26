@@ -19,16 +19,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Carrega 3 usuários e 60 aulas nos próximos 10 dias (6 por dia), sempre os mesmos a cada execução.
- * As aulas de capacidade 2 já começam lotadas, para testar o availableOnly e o 409.
- *
- * Usuários (e-mail / senha):
- *   admin@fit.com / admin123  (ADMIN)
- *   ana@fit.com   / ana123    (USER)
- *   bruno@fit.com / bruno123  (USER)
- */
 @Component
 @RequiredArgsConstructor
 public class DataLoader implements CommandLineRunner {
@@ -36,11 +28,11 @@ public class DataLoader implements CommandLineRunner {
     private record Slot(LocalTime time, String label) {}
 
     private static final List<Slot> SLOTS = List.of(
-            new Slot(LocalTime.of(7, 0), "ao amanhecer"),
-            new Slot(LocalTime.of(9, 0), "matinal"),
+            new Slot(LocalTime.of(7, 0), "at sunrise"),
+            new Slot(LocalTime.of(9, 0), "morning"),
             new Slot(LocalTime.of(12, 0), "express"),
-            new Slot(LocalTime.of(18, 0), "pós-trabalho"),
-            new Slot(LocalTime.of(19, 0), "intensivo"),
+            new Slot(LocalTime.of(18, 0), "after work"),
+            new Slot(LocalTime.of(19, 0), "intensive"),
             new Slot(LocalTime.of(20, 30), "relax")
     );
 
@@ -56,10 +48,11 @@ public class DataLoader implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
 
     @Override
+    @Transactional
     public void run(String... args) {
         if (userRepository.count() > 0) return;
 
-        userRepository.save(user("Administrador", "admin@fit.com", "admin123", Role.ADMIN));
+        userRepository.save(user("Administrator", "admin@fit.com", "admin123", Role.ADMIN));
         User ana = userRepository.save(user("Ana Souza", "ana@fit.com", "ana123", Role.USER));
         User bruno = userRepository.save(user("Bruno Costa", "bruno@fit.com", "bruno123", Role.USER));
 
@@ -117,8 +110,8 @@ public class DataLoader implements CommandLineRunner {
             case YOGA -> "Yoga";
             case PILATES -> "Pilates";
             case SPINNING -> "Spinning";
-            case FUNCTIONAL -> "Funcional";
-            case DANCE -> "Dança";
+            case FUNCTIONAL -> "Functional";
+            case DANCE -> "Dance";
         };
     }
 
