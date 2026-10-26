@@ -14,6 +14,8 @@ import br.com.fiap.agendafit.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,8 +50,12 @@ public class EnrollmentService {
 
     public Page<EnrollmentView> findMine(Pageable pageable) {
         Set<String> allowed = Set.of("id", "createdAt", "gymClass.startsAt");
-        if (pageable.getSort().stream().anyMatch(order -> !allowed.contains(order.getProperty()))) {
+        Sort sort = pageable.getSort();
+        if (sort.stream().anyMatch(order -> !allowed.contains(order.getProperty()))) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid sort property");
+        }
+        if (sort.getOrderFor("id") == null) {
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort.and(Sort.by("id")));
         }
         return repository.findByUserEmail(email(), pageable).map(this::view);
     }

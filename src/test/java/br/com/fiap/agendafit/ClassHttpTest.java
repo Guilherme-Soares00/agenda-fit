@@ -4,10 +4,16 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.Environment;
 import org.springframework.test.context.TestConstructor;
@@ -250,6 +256,75 @@ class ClassHttpTest {
             assertThat(mapper.readTree(get(path).body()).path("availableSpots").asInt()).isEqualTo(1);
         } finally {
             assertThat(request("DELETE", path, null, admin).statusCode()).isEqualTo(204);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"size=10", "size=7&sort=createdAt,desc", "size=7&sort=id,desc",
+            "size=7&sort=createdAt,desc&sort=id,desc"})
+    void paginatesEveryEnrollmentWhenCreationTimesAreEqual(String query) throws Exception {
+        String ana = token("ana@fit.com", "USER");
+        var originalTimes = new LinkedHashMap<Long, LocalDateTime>();
+        try (var connection = dataSource.getConnection()) {
+            try (var statement = connection.prepareStatement(
+                    "SELECT e.id, e.created_at FROM enrollment e JOIN users u ON u.id = e.user_id WHERE u.email = ? ORDER BY e.id")) {
+                statement.setString(1, "ana@fit.com");
+                try (var rows = statement.executeQuery()) {
+                    while (rows.next()) {
+                        originalTimes.put(rows.getLong(1), rows.getObject(2, LocalDateTime.class));
+                    }
+                }
+            }
+            assertThat(originalTimes.size()).isGreaterThan(10);
+            try (var statement = connection.prepareStatement("UPDATE enrollment SET created_at = ? WHERE id = ?")) {
+                try {
+                    for (long id : originalTimes.keySet()) {
+                        statement.setObject(1, LocalDateTime.of(2026, 1, 1, 0, 0));
+                        statement.setLong(2, id);
+                        statement.addBatch();
+                    }
+                    statement.executeBatch();
+                    List<Long> expected = List.copyOf(originalTimes.keySet());
+                    boolean descendingIds = query.contains("sort=id,desc");
+                    if (descendingIds) {
+                        expected = expected.reversed();
+                    }
+                    var received = new ArrayList<Long>();
+                    String path = "/enrollments/me?" + query;
+                    int pageNumber = 0;
+                    while (path != null) {
+                        assertThat(pageNumber).isLessThan(originalTimes.size());
+                        HttpResponse<String> response = request("GET", path, null, ana);
+                        assertThat(response.statusCode()).isEqualTo(200);
+                        JsonNode page = mapper.readTree(response.body());
+                        assertThat(page.path("page").path("totalElements").asInt()).isEqualTo(expected.size());
+                        assertThat(page.path("page").path("number").asInt()).isEqualTo(pageNumber++);
+                        for (JsonNode enrollment : page.path("_embedded").path("enrollments")) {
+                            received.add(enrollment.path("id").asLong());
+                        }
+                        JsonNode links = page.path("_links");
+                        if (links.has("next")) {
+                            String href = links.path("next").path("href").asText();
+                            assertThat(href).contains(descendingIds ? "id,desc" : "id,asc");
+                            if (query.contains("sort=createdAt,desc") && !descendingIds) {
+                                assertThat(href).contains("sort=createdAt,desc");
+                            }
+                            URI next = URI.create(href);
+                            path = next.getRawPath() + "?" + next.getRawQuery();
+                        } else {
+                            path = null;
+                        }
+                    }
+                    assertThat(received).doesNotHaveDuplicates().containsExactlyElementsOf(expected);
+                } finally {
+                    for (var original : originalTimes.entrySet()) {
+                        statement.setObject(1, original.getValue());
+                        statement.setLong(2, original.getKey());
+                        statement.addBatch();
+                    }
+                    statement.executeBatch();
+                }
+            }
         }
     }
 
